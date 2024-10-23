@@ -8,6 +8,8 @@ fastapi = {extras = ["standard"], version = "*"}
 pymongo = {extras = ["srv"], version = "*"}
 uvicorn = "*"
 redis = {extras = ["hiredis"], version = "*"}
+locust = "*"
+orjson = "*"
 
 [dev-packages]
 
