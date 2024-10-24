@@ -17,18 +17,30 @@ def create_ttl_index():
     )
 
 
-app = FastAPI(lifespan=create_ttl_index())
+app = FastAPI(
+    title="Vehicle allocation API",
+    description="A simple API to allocate vehicles for employees of a company",
+    lifespan=create_ttl_index()
+)
 
 
-@app.get("/")
-def test_up():
-    return {
-        "message": "Hello from FastAPI this is a test it works"
-    }
+# @app.get("/")
+# def test_up():
+#     return {
+#         "message": "Hello from FastAPI this is a test it works"
+#     }
 
 
 @app.post("/api/vehicle/add")
 async def insert_vehicle(vehicle: Vehicle, driver_id: str = Body(...)):
+    """
+        Insert a vehicle.
+
+        - **vehicle**: The vehicle document we want to create.
+        - **driver_id**: The id of the driver we want to pre-allocate to a vehicle.
+
+        Returns a message if it executes successfully. Returns a 404 error if it fails.
+    """
     driver = db.drivers.find_one({"_id": ObjectId(driver_id)})
     if not driver:
         raise HTTPException(status_code=404, detail="driver not found")
@@ -40,8 +52,13 @@ async def insert_vehicle(vehicle: Vehicle, driver_id: str = Body(...)):
     }
 
 
-@app.get("/api/vehicle/allocate/history")
+@app.get("/api/vehicle/allocate/history", summary="Get a history of all allocations made")
 async def get_all_allocations():
+    """
+        Get the history of all allocations made so far.
+
+        Returns a list of the details of all allocations.
+    """
     res = db.allocations.aggregate([
         {
             "$lookup": {
@@ -91,10 +108,16 @@ async def get_all_allocations():
     return res
 
 
-@app.post("/api/vehicle/allocate")
+@app.post("/api/vehicle/allocate", summary="Allocate a vehicle")
 async def allocate_vehicle(allocation: Allocation):
     """
-        Cache later
+        Allocate a vehicle to an employee.
+
+        - **allocation**: The allocation body, contains:
+            - vehicle: the id of the vehicle to allocate 
+            - employee: the id of the employee booking the vehicle  
+
+        Returns a message if successful. Returns a conflict status if already booked
     """
     allocation = allocation.model_dump()
 
@@ -126,8 +149,16 @@ async def allocate_vehicle(allocation: Allocation):
             status_code=500, detail="failed to allocate vehicle")
 
 
-@app.patch("/api/vehicle/update/{allocation_id}")
+@app.patch("/api/vehicle/update/{allocation_id}", summary="Update a vehicle allocation")
 async def update_allocation(allocation_id, updated_allocation: Allocation):
+    """
+        Update the allocation of a vehicle.
+
+        - **allocation_id**: The id of the allocation we want to update.
+        - **updated_allocation**: The new allocation object with which we will replace the old one.
+
+        Returns a message if it executes successfully. Returns a 500 error if it fails.
+    """
     updated_allocation = updated_allocation.model_dump()
     if updated_allocation["booked_at"] is None:
         updated_allocation["booked_at"] = datetime.now()
@@ -141,8 +172,15 @@ async def update_allocation(allocation_id, updated_allocation: Allocation):
     return {"message": "Allocation updated successfully"}
 
 
-@app.delete("/api/vehicle/delete/{allocation_id}")
+@app.delete("/api/vehicle/delete/{allocation_id}", summary="Delete an existing allocation")
 async def delete_allocation(allocation_id):
+    """
+        Delete the allocation of a vehicle.
+
+        - **allocation_id**: The id of the allocation we want to delete.
+
+        Returns a message if it executes successfully. Returns a 500 error if it fails.
+    """
     res = db.allocations.delete_one({"_id": ObjectId(allocation_id)})
     if not res.deleted_count:
         raise HTTPException(status_code=500, detail="could not delete entity")
