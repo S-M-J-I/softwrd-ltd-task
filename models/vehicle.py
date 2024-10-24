@@ -8,6 +8,7 @@ class Vehicle(BaseModel):
     type: str
     num_plate: str
     driver: Optional[ObjectId] = None
+    allocated: Optional[bool] = False
 
     class Config:
         populate_by_name = True
