@@ -10,6 +10,10 @@ uvicorn = "*"
 redis = {extras = ["hiredis"], version = "*"}
 locust = "*"
 orjson = "*"
+pytest = "*"
+pytest-asyncio = "*"
+httpx = "*"
+motor = "*"
 
 [dev-packages]
 

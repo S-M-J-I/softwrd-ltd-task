@@ -108,7 +108,7 @@ async def allocate_vehicle(allocation: Allocation):
     if not vehicle:
         raise HTTPException(status_code=404, detail="vehicle not found")
     if vehicle["allocated"]:
-        return HTTPException(status_code=409, detail="vehicle allocated")
+        return HTTPException(status_code=409, detail="vehicle already allocated")
 
     if allocation["booked_at"] is None:
         allocation["booked_at"] = datetime.now()

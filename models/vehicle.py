@@ -7,7 +7,7 @@ class Vehicle(BaseModel):
     name: str
     type: str
     num_plate: str
-    driver: Optional[ObjectId] = None
+    driver: str = None
     allocated: Optional[bool] = False
 
     class Config:
