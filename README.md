@@ -9,7 +9,7 @@ or use SSH
 git clone git@github.com:S-M-J-I/softwrd-ltd-task.git
 ```
 
-### Running the application
+## Running the application
 
 **NOTE: [Docker](https://docs.docker.com/engine/install/) must be installed for this step.**
 
@@ -23,14 +23,16 @@ MONGO_DB=
 
 *NOTE: The owner of this repository has deployed his database to a MongoDB Atlas Cluster. If you need access to it, feel free to reach out to him at [jishanlion@gmail.com](mailto:jishanlion@gmail.com)*
 
+#### Step 2: Docker pull and run
+
 Open up the terminal pointing to the root directory and enter the command:
 ```sh
-docker-compose build
+docker pull smji14/softwrd-ltd-app:latest
 ```
 
 Wait for the build to be finished. Next, run the app using the following command:
 ```sh
-docker-compose up
+docker run -p 8000:8000 softwrd-ltd-app
 ```
 
 #### Credits
