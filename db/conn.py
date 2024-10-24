@@ -1,4 +1,5 @@
 from pymongo import MongoClient
-from configs import MONGO_CONN_STR, MONGO_DB
+import os
 
-db = MongoClient(MONGO_CONN_STR)[MONGO_DB]
+print(os.getenv("MONGO_CONN_STR"))
+db = MongoClient(os.getenv("MONGO_CONN_STR"))[os.getenv("MONGO_DB")]
