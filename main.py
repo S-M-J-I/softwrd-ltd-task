@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException, Request
 from pymongo import ASCENDING
 from db.conn import db
-from models.vehicle import Vehicle
 from datetime import datetime
+from models.allocation import Allocation
+from bson import ObjectId
 
 
 def create_ttl_index():
@@ -18,7 +19,7 @@ app = FastAPI(lifespan=create_ttl_index())
 @app.get("/")
 def test_up():
     return {
-        "msg": "Hello from FastAPI this is a test it works"
+        "message": "Hello from FastAPI this is a test it works"
     }
 
 
@@ -31,32 +32,38 @@ def test_up():
 #     vehicle.driver = driver["id"]
 #     db.vehicles.insert_one(vehicle.dict())
 #     return {
-#         "msg": "Vehicle allocated"
+#         "message": "Vehicle allocated"
 #     }
 
 
 @app.post("/api/vehicle/allocate")
-async def allocate_vehicle(request: Request):
+async def allocate_vehicle(allocation: Allocation):
     """
         Cache later
     """
-    request = await request.json()
-    employee = db.employees.find_one({"id": request["employeeId"]}, {"id": 1})
+    allocation = allocation.model_dump()
+
+    employee = db.employees.find_one(
+        {"_id": ObjectId(allocation["employee"])}, {"_id": 1})
     if not employee:
         raise HTTPException(404, detail="Employee not found")
 
-    vehicle = db.vehicles.find_one({"id": request["vehicleId"]}, {"id": 1})
+    vehicle = db.vehicles.find_one(
+        {"_id": ObjectId(allocation["vehicle"])}, {"_id": 1})
     if not vehicle:
         raise HTTPException(404, detail="Vehicle not found")
-    date = datetime.now()
-    db.allocations.insert_one({
-        "employee": employee["id"],
-        "vehicle": vehicle["id"],
-        "booked_at": date
-    })
-    return {
-        "msg": "Vehicle allocated"
-    }
+
+    if allocation["booked_at"] is None:
+        allocation["booked_at"] = datetime.now()
+
+    res = db.allocations.insert_one(allocation)
+    if res.inserted_id:
+        return {
+            "message": "Vehicle allocated"
+        }
+    else:
+        raise HTTPException(
+            status_code=500, detail="failed to allocate vehicle")
 
 
 @app.patch("/api/vehicle/update")
@@ -64,6 +71,9 @@ async def update_allocation():
     pass
 
 
-@app.delete("/api/vehicle/delete")
-async def delete_allocation():
-    pass
+@app.delete("/api/vehicle/delete/{allocation_id}")
+async def delete_allocation(allocation_id):
+    await db.allocations.delete_one({"id": allocation_id})
+    return {
+        "message": "Allocation deleted"
+    }

@@ -1,15 +1,13 @@
-from pydantic import BaseModel, Field
-from models.py_obj import PyObjectId
+from pydantic import BaseModel
 from typing import Optional
 from bson import ObjectId
 from datetime import datetime
 
 
 class Allocation(BaseModel):
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
-    vehicle: PyObjectId
-    employee: PyObjectId
-    booked_at: datetime
+    vehicle: str
+    employee: str
+    booked_at: Optional[datetime] = None
 
     class Config:
         populate_by_name = True
