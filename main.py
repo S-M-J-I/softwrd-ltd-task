@@ -1,8 +1,8 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Body
 from pymongo import ASCENDING
 from db.conn import db
 from datetime import datetime
-from models.allocation import Allocation
+from models import Allocation, Vehicle, Driver, Employee
 from bson import ObjectId
 
 
@@ -23,17 +23,17 @@ def test_up():
     }
 
 
-# @app.post("/api/vehicle/add")
-# async def insert_vehicle(vehicle: Vehicle):
-#     driver = db.drivers.find_one({"id": "6718c8e5906ef85c4fa6858f"})
-#     if not driver:
-#         raise HTTPException(404, detail="Driver not found")
+@app.post("/api/vehicle/add")
+async def insert_vehicle(vehicle: Vehicle, driver_id: str = Body(...)):
+    driver = db.drivers.find_one({"_id": ObjectId(driver_id)})
+    if not driver:
+        raise HTTPException(404, detail="Driver not found")
 
-#     vehicle.driver = driver["id"]
-#     db.vehicles.insert_one(vehicle.dict())
-#     return {
-#         "message": "Vehicle allocated"
-#     }
+    vehicle.driver = driver["id"]
+    db.vehicles.insert_one(vehicle.dict())
+    return {
+        "message": "Vehicle allocated"
+    }
 
 
 @app.post("/api/vehicle/allocate")
@@ -66,14 +66,26 @@ async def allocate_vehicle(allocation: Allocation):
             status_code=500, detail="failed to allocate vehicle")
 
 
-@app.patch("/api/vehicle/update")
-async def update_allocation():
-    pass
+@app.patch("/api/vehicle/update/{allocation_id}")
+async def update_allocation(allocation_id, updated_allocation: Allocation):
+    updated_allocation = updated_allocation.model_dump()
+    if updated_allocation["booked_at"] is None:
+        updated_allocation["booked_at"] = datetime.now()
+
+    res = db.allocations.update_one(
+        {"_id": ObjectId(allocation_id)}, {"$set": updated_allocation})
+
+    if not res.matched_count:
+        raise HTTPException(status_code=500, detail="update failed")
+
+    return {"message": "Allocation updated successfully"}
 
 
 @app.delete("/api/vehicle/delete/{allocation_id}")
 async def delete_allocation(allocation_id):
-    await db.allocations.delete_one({"id": allocation_id})
+    res = db.allocations.delete_one({"_id": ObjectId(allocation_id)})
+    if not res.deleted_count:
+        raise HTTPException(status_code=500, detail="could not delete entity")
     return {
         "message": "Allocation deleted"
     }
